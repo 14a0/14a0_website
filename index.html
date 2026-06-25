@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="14A0 Pty Ltd - AI-powered software and robotics research & development">
     <title>14A0 Pty Ltd</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="icon" type="image/png" sizes="256x256" href="favicon.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <style>
         * {
             margin: 0;
@@ -83,12 +86,26 @@
         }
         
         h1 {
+            display: flex;
+            align-items: center;
+            gap: 12px;
             font-size: 24px;
             font-weight: 400;
             letter-spacing: 1px;
-            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
-            font-variant-numeric: slashed-zero;
-            text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+
+        .brand-mark {
+            height: 28px;
+            width: auto;
+            display: block;
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.12));
+        }
+
+        .brand-suffix {
+            font-size: 13px;
+            font-weight: 300;
+            letter-spacing: 2px;
+            color: var(--text-dim);
         }
         
         .subtitle {
@@ -218,6 +235,67 @@
             color: var(--text-dim);
             line-height: 1.6;
             margin-bottom: 20px;
+        }
+
+        /* Private / in-development card */
+        .product-card.is-private {
+            cursor: default;
+        }
+
+        .product-card.is-private .product-card-header,
+        .product-card.is-private .product-type,
+        .product-card.is-private .product-description,
+        .product-card.is-private .button {
+            filter: blur(7px);
+            opacity: 0.5;
+            user-select: none;
+            pointer-events: none;
+        }
+
+        .product-card.is-private:hover {
+            transform: none;
+            border-color: var(--border);
+            box-shadow: none;
+        }
+
+        .private-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 20px;
+            text-align: center;
+            z-index: 2;
+        }
+
+        .private-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(0, 102, 255, 0.35);
+            background: rgba(0, 102, 255, 0.08);
+            color: var(--accent);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 8px 16px;
+            border-radius: 2px;
+        }
+
+        .private-badge::before {
+            content: '\2298';
+            font-size: 13px;
+        }
+
+        .private-note {
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-dim);
         }
 
         /* Info Grid */
@@ -469,7 +547,10 @@
     <div class="container">
         <header>
             <div class="logo-line">
-                <h1>14A0 PTY LTD</h1>
+                <h1>
+                    <img src="photo/14a0-logo.png" alt="14A0" class="brand-mark" width="81" height="28">
+                    <span class="brand-suffix">PTY LTD</span>
+                </h1>
             </div>
             <p class="tagline typewriter">AI-Powered Software & Robotics R&D</p>
         </header>
@@ -479,14 +560,18 @@
             <div class="products-section">
                 <h2>Products</h2>
                 <div class="products-grid">
-                    <div class="product-card">
+                    <div class="product-card is-private">
                         <div class="product-card-header">
                             <span class="beta-tag">Beta</span>
-                            <span class="product-name">CLADAL.COM</span>
+                            <span class="product-name">Stealth Project</span>
                         </div>
-                        <div class="product-type">Nonlinear AI Chat</div>
-                        <p class="product-description">Map-based knowledge exploration. Solves context window limits for both LLMs and human cognition through spatial topic organization.</p>
-                        <a href="https://cladal.com" class="button" target="_blank">Explore</a>
+                        <div class="product-type">Private R&amp;D</div>
+                        <p class="product-description">A new product is currently in private development. Public details will be available at launch.</p>
+                        <a href="#" class="button" tabindex="-1" aria-hidden="true">Explore</a>
+                        <div class="private-overlay">
+                            <span class="private-badge">Private Beta</span>
+                            <span class="private-note">In development</span>
+                        </div>
                     </div>
                     <div class="product-card">
                         <div class="product-card-header">
