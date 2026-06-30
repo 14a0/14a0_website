@@ -38,19 +38,8 @@
   .ring-inner{ fill:none; stroke:rgba(180,210,255,.55); stroke-width:0.6; }
   .ring-mouth{ fill:none; stroke:rgba(150,190,255,.28); stroke-width:0.45; }
   .diag{ fill:none; stroke:#eaf1ff; stroke-width:2.0; stroke-linecap:round; }
-  /* the travelling light-jet streak running along the diagonal */
-  .streak{
-    fill:none; stroke:#dff0ff; stroke-width:2.6; stroke-linecap:round;
-    stroke-dasharray:7 300; stroke-dashoffset:300;
-    filter:url(#jetglow);
-    animation:travel 3.6s linear infinite;
-  }
-  @keyframes travel{
-    0%   { stroke-dashoffset:64; opacity:0; }
-    12%  { opacity:1; }
-    88%  { opacity:1; }
-    100% { stroke-dashoffset:-72; opacity:0; }
-  }
+  /* soft round light pulse gliding along the jet (motion is SMIL-driven below) */
+  .spark{ pointer-events:none; }
   /* ===== subtle, removable brand overlay (wordmark + tagline) ===== */
   #tag{
     position:absolute; left:0; right:0; bottom:6.2%; z-index:3;
@@ -73,11 +62,12 @@
   /* graceful reduced-motion: kill all motion, keep an elegant still frame */
   body.reduced #mark{ animation:none;
     filter:drop-shadow(0 0 9px rgba(140,185,255,.7)) drop-shadow(0 0 30px rgba(51,133,255,.4)); }
-  body.reduced .streak{ animation:none; opacity:.9; stroke-dashoffset:-4; }
+  body.reduced .spark{ display:none; }
   body.reduced #tag, body.reduced #wordmark{ animation:none; opacity:1; }
   body.reduced #wordmark{ transform:translateX(-50%); }
   @media (prefers-reduced-motion: reduce){
-    #mark,.streak,#tag,#wordmark{ animation:none !important; }
+    #mark,#tag,#wordmark{ animation:none !important; }
+    .spark{ display:none; }
   }
 </style>
 </head>
@@ -93,6 +83,11 @@
         <feGaussianBlur stdDeviation="1.4" result="b"/>
         <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
       </filter>
+      <radialGradient id="spark" cx="50%" cy="50%" r="50%">
+        <stop offset="0%"   stop-color="#f4faff" stop-opacity="0.95"/>
+        <stop offset="38%"  stop-color="#cfe6ff" stop-opacity="0.42"/>
+        <stop offset="100%" stop-color="#cfe6ff" stop-opacity="0"/>
+      </radialGradient>
     </defs>
     <!-- faint inner concentric rings echo the wormhole mouth (depth) -->
     <circle class="ring-mouth" cx="50" cy="50" r="13.6"/>
@@ -101,7 +96,12 @@
     <circle class="ring" cx="50" cy="50" r="18"/>
     <!-- the diagonal (relativistic light jet) extends beyond the ring at both ends -->
     <line class="diag"   x1="67.3" y1="32.7" x2="32.7" y2="67.3"/>
-    <line class="streak" x1="67.3" y1="32.7" x2="32.7" y2="67.3"/>
+    <!-- soft round light pulse gliding along the jet (replaces the boxy dash flash) -->
+    <circle class="spark" r="3.1" fill="url(#spark)" opacity="0">
+      <animateMotion dur="4.2s" repeatCount="indefinite" calcMode="linear" path="M67.3 32.7 L32.7 67.3"/>
+      <animate attributeName="opacity" dur="4.2s" repeatCount="indefinite" keyTimes="0;0.16;0.84;1" values="0;0.95;0.85;0"/>
+      <animate attributeName="r" dur="4.2s" repeatCount="indefinite" keyTimes="0;0.5;1" values="2.7;3.4;2.7"/>
+    </circle>
   </svg>
 
   <!-- overlay: delete these two lines to remove the wordmark/tagline -->
