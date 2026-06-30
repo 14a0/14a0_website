@@ -38,8 +38,9 @@
   .ring-inner{ fill:none; stroke:rgba(180,210,255,.55); stroke-width:0.6; }
   .ring-mouth{ fill:none; stroke:rgba(150,190,255,.28); stroke-width:0.45; }
   .diag{ fill:none; stroke:#eaf1ff; stroke-width:2.0; stroke-linecap:round; }
-  /* soft round light pulse gliding along the jet (motion is SMIL-driven below) */
-  .spark{ pointer-events:none; }
+  /* bright comet flash streaking along the jet (motion is SMIL-driven below) */
+  .spark{ pointer-events:none;
+    filter:drop-shadow(0 0 7px rgba(210,235,255,.95)) drop-shadow(0 0 22px rgba(130,185,255,.72)); }
   /* ===== subtle, removable brand overlay (wordmark + tagline) ===== */
   #tag{
     position:absolute; left:0; right:0; bottom:6.2%; z-index:3;
@@ -83,10 +84,15 @@
         <feGaussianBlur stdDeviation="1.4" result="b"/>
         <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
       </filter>
-      <radialGradient id="spark" cx="50%" cy="50%" r="50%">
-        <stop offset="0%"   stop-color="#f4faff" stop-opacity="0.95"/>
-        <stop offset="38%"  stop-color="#cfe6ff" stop-opacity="0.42"/>
-        <stop offset="100%" stop-color="#cfe6ff" stop-opacity="0"/>
+      <radialGradient id="flashGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.95"/>
+        <stop offset="30%"  stop-color="#dcefff" stop-opacity="0.50"/>
+        <stop offset="100%" stop-color="#bfe0ff" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="flashCore" cx="50%" cy="50%" r="50%">
+        <stop offset="0%"   stop-color="#ffffff" stop-opacity="1"/>
+        <stop offset="55%"  stop-color="#f2f8ff" stop-opacity="0.9"/>
+        <stop offset="100%" stop-color="#eaf4ff" stop-opacity="0"/>
       </radialGradient>
     </defs>
     <!-- faint inner concentric rings echo the wormhole mouth (depth) -->
@@ -96,12 +102,14 @@
     <circle class="ring" cx="50" cy="50" r="18"/>
     <!-- the diagonal (relativistic light jet) extends beyond the ring at both ends -->
     <line class="diag"   x1="67.3" y1="32.7" x2="32.7" y2="67.3"/>
-    <!-- soft round light pulse gliding along the jet (replaces the boxy dash flash) -->
-    <circle class="spark" r="3.1" fill="url(#spark)" opacity="0">
-      <animateMotion dur="4.2s" repeatCount="indefinite" calcMode="linear" path="M67.3 32.7 L32.7 67.3"/>
-      <animate attributeName="opacity" dur="4.2s" repeatCount="indefinite" keyTimes="0;0.16;0.84;1" values="0;0.95;0.85;0"/>
-      <animate attributeName="r" dur="4.2s" repeatCount="indefinite" keyTimes="0;0.5;1" values="2.7;3.4;2.7"/>
-    </circle>
+    <!-- bright comet flash streaking along the jet (smooth radial gradients, never boxy) -->
+    <g class="spark" opacity="0">
+      <ellipse rx="16" ry="6.0" fill="url(#flashGlow)"/>
+      <ellipse rx="7.5" ry="2.1" fill="url(#flashCore)"/>
+      <animateMotion dur="2.9s" repeatCount="indefinite" rotate="auto" calcMode="linear" path="M70 30 L30 70"/>
+      <animate attributeName="opacity" dur="2.9s" repeatCount="indefinite"
+               keyTimes="0;0.12;0.5;0.88;1" values="0;1;1;1;0"/>
+    </g>
   </svg>
 
   <!-- overlay: delete these two lines to remove the wordmark/tagline -->
