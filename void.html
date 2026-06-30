@@ -3,10 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#000005">
 <title>14AØ</title>
 <style>
-  :root{ --accent:#3385ff; --accent-deep:#0066ff; --silver:#e6eeff; color-scheme:dark; }
+  :root{ --accent:#3385ff; --accent-deep:#0066ff; --silver:#e6eeff; }
   *{ box-sizing:border-box; }
   html,body{ margin:0; height:100%; background:#000005; overflow:hidden; }
   body{
@@ -14,13 +13,11 @@
     color:var(--silver);
     -webkit-font-smoothing:antialiased;
   }
-  /* width/height are pinned to window.innerWidth/innerHeight in px by JS so the
-     canvas never relies on iOS's 100vh (which differs from the visible height). */
+  /* width/height pinned to window.innerWidth/innerHeight in px by JS so the canvas
+     never relies on iOS 100vh (which differs from the visible height). */
   #stage{ position:fixed; top:0; left:0; width:100vw; height:100vh; background:#000005; }
-  /* the cosmos shader sits behind everything */
+  /* the cosmos canvas sits behind everything */
   #gl{ position:absolute; inset:0; width:100%; height:100%; display:block; z-index:1; }
-  /* spiraling-infall particle layer, additive, above the shader */
-  #fx{ position:absolute; inset:0; width:100%; height:100%; display:block; z-index:2; pointer-events:none; }
   /* crisp brand mark overlay */
   #mark{
     position:absolute; left:50%; top:50%;
@@ -34,14 +31,19 @@
     0%,100%{ filter:drop-shadow(0 0 6px rgba(120,170,255,.55)) drop-shadow(0 0 22px rgba(51,133,255,.35)); }
     50%    { filter:drop-shadow(0 0 12px rgba(160,200,255,.85)) drop-shadow(0 0 44px rgba(51,133,255,.55)); }
   }
-  .ring{ fill:none; stroke:#eaf1ff; stroke-width:2.0; stroke-linecap:round; }
-  .ring-inner{ fill:none; stroke:rgba(180,210,255,.55); stroke-width:0.6; }
-  .ring-mouth{ fill:none; stroke:rgba(150,190,255,.28); stroke-width:0.45; }
-  .diag{ fill:none; stroke:#eaf1ff; stroke-width:2.0; stroke-linecap:round; }
-  /* bright comet flash streaking along the jet (motion is SMIL-driven below) */
+  .ring{
+    fill:none; stroke:#eaf1ff; stroke-width:2.0; stroke-linecap:round;
+  }
+  .ring-inner{
+    fill:none; stroke:rgba(180,210,255,.55); stroke-width:0.6;
+  }
+  .diag{
+    fill:none; stroke:#eaf1ff; stroke-width:2.0; stroke-linecap:round;
+  }
+  /* smooth comet flash gliding along the jet (motion is SMIL-driven below) */
   .spark{ pointer-events:none;
-    filter:drop-shadow(0 0 7px rgba(210,235,255,.95)) drop-shadow(0 0 22px rgba(130,185,255,.72)); }
-  /* ===== subtle, removable brand overlay (wordmark + tagline) ===== */
+    filter:drop-shadow(0 0 6px rgba(205,232,255,.9)) drop-shadow(0 0 18px rgba(120,180,255,.58)); }
+  /* subtle premium tagline */
   #tag{
     position:absolute; left:0; right:0; bottom:6.2%; z-index:3;
     text-align:center; pointer-events:none;
@@ -75,44 +77,41 @@
 <body>
   <div id="stage">
     <canvas id="gl"></canvas>
-    <canvas id="fx"></canvas>
 
   <!-- CRISP brand mark: ring + diagonal slightly beyond the circle (upper-right -> lower-left) -->
-  <svg id="mark" viewBox="0 0 100 100" width="300" height="300" role="img" aria-label="14A&#216;">
+  <svg id="mark" viewBox="0 0 100 100" width="300" height="300" role="img" aria-label="14AO">
     <defs>
       <filter id="jetglow" x="-60%" y="-60%" width="220%" height="220%">
         <feGaussianBlur stdDeviation="1.4" result="b"/>
         <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
       </filter>
       <radialGradient id="flashGlow" cx="50%" cy="50%" r="50%">
-        <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.95"/>
-        <stop offset="30%"  stop-color="#dcefff" stop-opacity="0.50"/>
+        <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.92"/>
+        <stop offset="32%"  stop-color="#dcefff" stop-opacity="0.45"/>
         <stop offset="100%" stop-color="#bfe0ff" stop-opacity="0"/>
       </radialGradient>
       <radialGradient id="flashCore" cx="50%" cy="50%" r="50%">
         <stop offset="0%"   stop-color="#ffffff" stop-opacity="1"/>
-        <stop offset="55%"  stop-color="#f2f8ff" stop-opacity="0.9"/>
+        <stop offset="55%"  stop-color="#f2f8ff" stop-opacity="0.85"/>
         <stop offset="100%" stop-color="#eaf4ff" stop-opacity="0"/>
       </radialGradient>
     </defs>
-    <!-- faint inner concentric rings echo the wormhole mouth (depth) -->
-    <circle class="ring-mouth" cx="50" cy="50" r="13.6"/>
+    <!-- soft inner edge for depth -->
     <circle class="ring-inner" cx="50" cy="50" r="16.4"/>
     <!-- the ring (photon sphere / event horizon) -->
     <circle class="ring" cx="50" cy="50" r="18"/>
     <!-- the diagonal (relativistic light jet) extends beyond the ring at both ends -->
     <line class="diag"   x1="67.3" y1="32.7" x2="32.7" y2="67.3"/>
-    <!-- bright comet flash streaking along the jet (smooth radial gradients, never boxy) -->
+    <!-- smooth comet flash gliding along the jet (radial gradients, never boxy) -->
     <g class="spark" opacity="0">
-      <ellipse rx="16" ry="6.0" fill="url(#flashGlow)"/>
-      <ellipse rx="7.5" ry="2.1" fill="url(#flashCore)"/>
-      <animateMotion dur="2.9s" repeatCount="indefinite" rotate="auto" calcMode="linear" path="M70 30 L30 70"/>
-      <animate attributeName="opacity" dur="2.9s" repeatCount="indefinite"
-               keyTimes="0;0.12;0.5;0.88;1" values="0;1;1;1;0"/>
+      <ellipse rx="14" ry="4.6" fill="url(#flashGlow)"/>
+      <ellipse rx="6.5" ry="1.8" fill="url(#flashCore)"/>
+      <animateMotion dur="3.8s" repeatCount="indefinite" rotate="auto" calcMode="linear" path="M70 30 L30 70"/>
+      <animate attributeName="opacity" dur="3.8s" repeatCount="indefinite"
+               keyTimes="0;0.14;0.5;0.86;1" values="0;1;1;1;0"/>
     </g>
   </svg>
 
-  <!-- overlay: delete these two lines to remove the wordmark/tagline -->
   <div id="wordmark">14A&#216;</div>
   <div id="tag">FRONTIER&nbsp;INTELLIGENCE&nbsp;&nbsp;&middot;&nbsp;&nbsp;EMBODIED&nbsp;SYSTEMS</div>
   </div>
@@ -120,9 +119,7 @@
 <script>
 "use strict";
 (function(){
-  var TAU = Math.PI*2;
   var canvas = document.getElementById('gl');
-  var fx     = document.getElementById('fx');
   var svg    = document.getElementById('mark');
   var stage  = document.getElementById('stage');
   var reduceMQ = (window.matchMedia)
@@ -133,23 +130,16 @@
 
   // ---------- shared sizing ----------
   var W=1, H=1, dpr=1, ringR=0.18;
-  var DPR_CAP=2, TARGET_PX=2100000;
-  // CSS-pixel geometry shared by the particle layer (matches the crisp SVG mark)
-  var vCW=1, vCH=1, cxpx=0, cypx=0, ringPx=1;
-
-  function clampN(v,a,b){ return v<a?a:(v>b?b:v); }
-  function clamp01(v){ if(!(v>0)) return 0; if(v>1) return 1; return v; }
+  var DPR_CAP=2, TARGET_PX=2300000;
 
   function computeSize(){
     var cssW = Math.max(1, window.innerWidth  || document.documentElement.clientWidth  || 1);
     var cssH = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 1);
     var dev  = window.devicePixelRatio || 1;
-    if(!(dev>0) || !isFinite(dev)) dev=1;                  // guard NaN/Infinity DPR
     var scale = Math.min(DPR_CAP, dev);
     var maxScale = Math.sqrt(TARGET_PX/Math.max(1,(cssW*cssH)));
-    if(scale > maxScale) scale = maxScale;                 // clamp pixel budget on huge screens
-    scale = Math.max(0.6, Math.min(scale, DPR_CAP));       // DPR hard-capped at 2
-    if(!(scale>0) || !isFinite(scale)) scale=1;            // belt-and-braces against NaN
+    if(scale > maxScale) scale = maxScale;          // clamp pixel budget on huge screens
+    scale = Math.max(0.6, Math.min(scale, DPR_CAP));
     dpr = scale;
     W = Math.max(1, Math.round(cssW*dpr));
     H = Math.max(1, Math.round(cssH*dpr));
@@ -160,20 +150,13 @@
     var Sm = Math.min(cssW,cssH);
     svg.setAttribute('width', Sm);
     svg.setAttribute('height', Sm);
-    // shared CSS-px geometry for the particle overlay
-    vCW=cssW; vCH=cssH; cxpx=cssW*0.5; cypx=cssH*0.5; ringPx=0.18*Sm;
-    // Pin the stage (and thus both canvases + the centered mark) to the REAL
-    // visible viewport in px. On iOS Safari 100vh != window.innerHeight, so
-    // relying on 100vh stretched the shader and pushed the black hole below
-    // the crisp mark. Sizing in px keeps display == backing-store == mark center.
+    // pin stage to the REAL visible viewport in px (not iOS 100vh) so the
+    // canvas display == backing-store == the centered mark.
     if(stage){ stage.style.width = cssW + 'px'; stage.style.height = cssH + 'px'; }
-    sizeFx();
   }
 
   // ====================================================================
-  //  WEBGL PATH  (cosmos: lensed stars, domain-warped plasma swirl,
-  //  wormhole-tunnel streaks, doppler-bright disk, photon ring,
-  //  chromatic diagonal jet, halo, slow orbital drift)
+  //  WEBGL PATH
   // ====================================================================
   var VERT = [
     'attribute vec2 position;',
@@ -209,22 +192,6 @@
     '  for(int i=0;i<4;i++){ v+=a*vnoise(p); p=p*2.02+vec2(7.1,3.7); a*=0.5; }',
     '  return v;',
     '}',
-    'float fbm3(vec2 p){',
-    '  float v=0.0, a=0.5;',
-    '  for(int i=0;i<3;i++){ v+=a*vnoise(p); p=p*2.02+vec2(7.1,3.7); a*=0.5; }',
-    '  return v;',
-    '}',
-    'mat2 rotm(float an){ float c=cos(an), s=sin(an); return mat2(c,-s,s,c); }',
-    'vec3 plasmaColor(float n){',
-    '  vec3 c1=vec3(0.010,0.030,0.090);',
-    '  vec3 c2=vec3(0.030,0.180,0.500);',
-    '  vec3 c3=vec3(0.250,0.550,1.000);',
-    '  vec3 c4=vec3(0.860,0.940,1.000);',
-    '  vec3 c=mix(c1,c2,smoothstep(0.00,0.45,n));',
-    '  c=mix(c,c3,smoothstep(0.40,0.72,n));',
-    '  c=mix(c,c4,smoothstep(0.72,1.00,n));',
-    '  return c;',
-    '}',
     'float starLayer(vec2 s, float t){',
     '  vec2 id=floor(s); vec2 f=fract(s)-0.5;',
     '  vec2 off=(vec2(hash21(id+0.13),hash21(id+0.71))-0.5)*0.74;',
@@ -242,23 +209,16 @@
     '}',
     '',
     'void main(){',
-    '  vec2 uv=(gl_FragCoord.xy-0.5*u_res)/max(u_res.y,1.0);',
-    '  float t=u_time;',
-    '  float ringR=max(u_ringR,0.02);',
-    '  float orbit=t*0.035;',
-    '  vec2 sway=vec2(sin(t*0.07),cos(t*0.061))*0.010;',
-    '  vec2 uvs=uv+sway;',
+    '  vec2 uv=(gl_FragCoord.xy-0.5*u_res)/u_res.y;',
     '  float r=length(uv);',
     '  float a=atan(uv.y,uv.x);',
+    '  float t=u_time;',
+    '  float ringR=u_ringR;',
     '  float Rn=r/ringR;',
     '',
-    '  // relativistic beaming: one side (left) noticeably brighter, slow precession',
-    '  float dopAng=3.14159+0.05*t;',
-    '  float doppler=clamp(1.0+0.85*cos(a-dopAng),0.18,1.92);',
-    '',
-    '  // ---- gravitationally lensed starfield (slow orbit) ----',
+    '  // ---- gravitationally lensed starfield ----',
     '  float k=ringR*ringR*1.5;',
-    '  float adrift=a+0.03*t+orbit;',
+    '  float adrift=a+0.03*t;',
     '  float bent=r + k/max(r,0.0006);',
     '  float SCALE=22.0;',
     '  float smear=0.10/(abs(Rn-1.22)+0.07); smear=min(smear,0.6);',
@@ -269,58 +229,45 @@
     '    sAcc+=starField(s,t);',
     '  }',
     '  sAcc/=3.0;',
-    '  vec3 starCol=sAcc*vec3(0.82,0.90,1.0)*1.65;',
+    '  vec3 starCol=sAcc*vec3(0.85,0.9,1.0)*1.7;',
     '',
-    '  // ---- domain-warped plasma swirl (organic galactic haze, spiraling inward) ----',
-    '  float band=smoothstep(0.90,1.30,Rn)*smoothstep(3.30,1.45,Rn);',
-    '  float spin=2.30*log(Rn+0.08) - t*0.50 + orbit*3.0;',
-    '  vec2 q=rotm(spin)*(uvs/ringR);',
-    '  vec2 warp=vec2( fbm3(q*1.4+vec2(0.0, t*0.08)), fbm3(q*1.4+vec2(4.0,-t*0.08)) );',
-    '  float plasma=fbm(q*3.0 + warp*1.7 + vec2(t*0.05,0.0));',
-    '  plasma=pow(max(plasma,0.0),1.7)*band;',
-    '  vec3 pcol=plasmaColor(clamp(plasma*1.7,0.0,1.0));',
-    '  vec3 plasmaCol=pcol*plasma*2.3*doppler;',
-    '  plasmaCol=mix(plasmaCol, plasmaCol*vec3(0.82,0.80,1.18), smoothstep(2.0,3.2,Rn));',
+    '  // ---- accretion dust spiralling inward (outside the ring) ----',
+    '  // seam-free: shear the noise field by a radius-dependent twist (log spiral)',
+    '  float band=smoothstep(0.92,1.25,Rn)*smoothstep(3.1,1.45,Rn);',
+    '  float diff=t*1.1/(Rn*0.7+0.25);',
+    '  float twist=log(Rn+0.01)*3.6 - diff;',
+    '  float cs=cos(twist), sn=sin(twist);',
+    '  vec2 ruv=mat2(cs,-sn,sn,cs)*(uv/ringR);',
+    '  float dust=fbm(ruv*4.3 + vec2(t*0.06,0.0));',
+    '  dust=pow(max(dust,0.0),1.7)*band*1.95;',
+    '  vec3 accCol=mix(vec3(0.95,0.97,1.0), vec3(0.12,0.42,1.0), smoothstep(1.0,2.2,Rn));',
+    '  accCol=mix(accCol, vec3(0.42,0.32,1.0), smoothstep(2.0,3.0,Rn)*0.55);',
     '',
-    '  // ---- concentric wormhole-tunnel streaks flowing inward ----',
-    '  float tunBand=smoothstep(0.93,1.18,Rn)*smoothstep(3.40,1.20,Rn);',
-    '  float rings=0.5+0.5*sin(log(Rn+0.01)*9.0 - t*1.6);',
-    '  rings=pow(rings,2.4);',
-    '  float walls=0.5+0.5*sin(a*16.0 + log(Rn+0.01)*6.0 - t*0.7);',
-    '  float tunnel=(rings*0.7 + rings*walls*0.45)*tunBand;',
-    '  vec3 tunCol=mix(vec3(0.28,0.50,1.0), vec3(0.72,0.86,1.0), rings)*tunnel*0.55*(0.55+0.6*doppler);',
-    '',
-    '  // ---- photon ring shimmer hugging the circle (brighter, chromatic, doppler) ----',
+    '  // ---- photon ring shimmer at Rn ~ 1 (periodic in angle -> no seam) ----',
+    '  // subtle chromatic dispersion: inner edge bluer, outer edge whiter',
     '  float shim=0.84+0.16*sin(a*9.0 - t*1.5)+0.10*sin(a*5.0 + t*0.9);',
-    '  float prC=exp(-pow((Rn-1.000)/0.055,2.0));',
-    '  float prR=exp(-pow((Rn-1.022)/0.058,2.0));',
-    '  float prB=exp(-pow((Rn-0.982)/0.054,2.0));',
-    '  // outer red fringe weighted down -> cooler, on-brand photon ring',
-    '  vec3 prCol=vec3(0.70*prR,0.92*prC,1.0*prB)*2.5*shim*(0.72+0.40*doppler);',
+    '  float prC=exp(-pow((Rn-1.000)/0.060,2.0));',
+    '  float prR=exp(-pow((Rn-1.020)/0.060,2.0));',
+    '  float prB=exp(-pow((Rn-0.984)/0.058,2.0));',
+    '  vec3 prCol=vec3(0.80*prR,0.90*prC,1.0*prB)*2.2*shim;',
     '',
     '  // inner lensed glow hugging the void',
-    '  float innerGlow=exp(-pow((Rn-0.97)/0.18,2.0))*0.42;',
+    '  float innerGlow=exp(-pow((Rn-0.97)/0.18,2.0))*0.45;',
     '',
-    '  // ---- diagonal light-jet with chromatic aberration (UR<->LL axis) ----',
+    '  // ---- diagonal light-jet (subtle background beam, UR<->LL axis) ----',
     '  vec2 jdir=normalize(vec2(1.0,1.0));',
     '  float along=dot(uv,jdir);',
     '  float perp=dot(uv,vec2(-jdir.y,jdir.x));',
-    '  float jw=0.010+0.02*abs(along);',
-    '  float jenv=smoothstep(ringR*0.7,ringR*2.0,abs(along));',
-    '  float ca=0.0026+0.009*abs(along);',
-    '  float jrr=exp(-pow((perp+ca)/jw,2.0));',
-    '  float jgg=exp(-pow((perp   )/jw,2.0));',
-    '  float jbb=exp(-pow((perp-ca)/jw,2.0));',
+    '  float jw=0.012+0.02*abs(along);',
+    '  float jet=exp(-pow(perp/jw,2.0))*smoothstep(ringR*0.8,ringR*2.2,abs(along));',
     '  float jpulse=0.5+0.5*sin(abs(along)*22.0 - t*3.0);',
-    '  float jamp=jenv*(0.32+0.68*jpulse);',
-    '  // cool the chromatic fringe toward cyan/blue (no warm/orange cast, stays on-brand)',
-    '  vec3 jetCol=vec3(jrr*0.58,jgg,jbb*1.06)*vec3(0.54,0.84,1.28)*jamp*0.5;',
+    '  jet*=(0.35+0.65*jpulse);',
+    '  vec3 jetCol=vec3(0.55,0.78,1.0)*jet*0.45;',
     '',
     '  // ---- compose ----',
     '  vec3 col=vec3(0.0);',
     '  col+=starCol;',
-    '  col+=plasmaCol;',
-    '  col+=tunCol;',
+    '  col+=accCol*dust;',
     '  col+=prCol;',
     '  col+=vec3(0.5,0.75,1.0)*innerGlow;',
     '  col+=jetCol;',
@@ -332,21 +279,20 @@
     '',
     '  // whisper of nebula + soft bloom halo',
     '  col+=vec3(0.02,0.03,0.06)*smoothstep(2.6,0.5,Rn)*0.5*horizon;',
-    '  float halo=exp(-pow((Rn-1.12)/0.60,2.0))*0.22;',
+    '  float halo=exp(-pow((Rn-1.12)/0.62,2.0))*0.24;',
     '  col+=vec3(0.2,0.4,0.9)*halo;',
     '',
     '  // vignette',
     '  col*=1.0-0.34*smoothstep(0.3,1.12,r);',
     '',
-    '  // tonemap + gamma + gentle contrast + grain (NaN/negative guarded)',
-    '  col=max(col,0.0);',
-    '  col=vec3(1.0)-exp(-col*1.22);',
-    '  col=pow(max(col,0.0),vec3(0.90));',
+    '  // tonemap + gamma + gentle contrast + grain',
+    '  col=vec3(1.0)-exp(-col*1.28);',
+    '  col=pow(col,vec3(0.90));',
     '  col=clamp(col,0.0,1.0);',
     '  col=mix(col, col*col*(3.0-2.0*col), 0.12);',
     '  col+=(hash21(gl_FragCoord.xy+fract(t))-0.5)*0.022;',
     '',
-    '  gl_FragColor=vec4(clamp(col,0.0,1.0),1.0);',
+    '  gl_FragColor=vec4(col,1.0);',
     '}'
   ].join('\n');
 
@@ -421,116 +367,9 @@
   }
 
   // ====================================================================
-  //  SPIRALING-INFALL PARTICLE LAYER (Canvas2D overlay, additive)
-  //  glowing particles spiral inward, flash + recycle at the horizon;
-  //  doppler-bright on one side; gentle disk inclination for depth.
+  //  CANVAS-2D FALLBACK (still elegant; SVG O stays on top)
   // ====================================================================
-  var fxc=null, P=null, SPR=null;
-  var INCL=0.90;  // disk inclination -> subtle 3D depth (kept near-circular so the O reads)
-
-  function makeGlow(r,g,b){
-    var s=64, oc=document.createElement('canvas'); oc.width=oc.height=s;
-    var o=oc.getContext('2d'); if(!o) return oc;
-    var grd=o.createRadialGradient(s/2,s/2,0, s/2,s/2,s/2);
-    grd.addColorStop(0.00,'rgba('+r+','+g+','+b+',1)');
-    grd.addColorStop(0.25,'rgba('+r+','+g+','+b+',0.5)');
-    grd.addColorStop(0.60,'rgba('+r+','+g+','+b+',0.12)');
-    grd.addColorStop(1.00,'rgba('+r+','+g+','+b+',0)');
-    o.fillStyle=grd; o.fillRect(0,0,s,s);
-    return oc;
-  }
-
-  function sizeFx(){
-    if(!fx) return;
-    var fw=Math.max(1,Math.round(vCW*dpr)), fh=Math.max(1,Math.round(vCH*dpr));
-    if(fx.width!==fw)  fx.width=fw;
-    if(fx.height!==fh) fx.height=fh;
-    if(fxc){ fxc.setTransform(dpr,0,0,dpr,0,0); fxc.lineCap='round'; fxc.lineJoin='round'; }
-  }
-
-  function initFx(){
-    if(!fx) return false;
-    try{ fxc=fx.getContext('2d'); }catch(e){ fxc=null; }
-    if(!fxc){ return false; }
-    SPR=[ makeGlow(255,255,255), makeGlow(206,226,255), makeGlow(80,150,255), makeGlow(150,140,255) ];
-    sizeFx();
-    seedParticles();
-    return true;
-  }
-
-  function resetP(p, seedSpread){
-    p.a=Math.random()*TAU;
-    p.r = seedSpread ? ringPx*(1.10+Math.random()*1.55) : ringPx*(2.15+Math.random()*0.50);
-    p.spd=0.55+Math.random()*0.70;
-    p.size=0.70+Math.random()*1.50;
-    p.base=0.55+Math.random()*0.50;
-    p.x=cxpx+Math.cos(p.a)*p.r;
-    p.y=cypx+Math.sin(p.a)*p.r*INCL;
-    p.px=p.x; p.py=p.y;
-  }
-
-  function seedParticles(){
-    var n = reduce ? 50 : Math.round(clampN(Math.min(vCW,vCH)/12, 38, 66));
-    P=[]; for(var i=0;i<n;i++){ var p={}; resetP(p,true); P.push(p); }
-  }
-
-  function drawParticles(time, dt, moving){
-    if(!fxc || !P) return;
-    fxc.clearRect(0,0,vCW,vCH);
-    fxc.globalCompositeOperation='lighter';
-    var R=ringPx, cx=cxpx, cy=cypx;
-    var SPIN=0.55, INFLOW=R*0.30;
-    for(var i=0;i<P.length;i++){
-      var p=P[i];
-      if(moving){
-        var rn0=p.r/R;
-        var om=p.spd*SPIN*(0.40+0.90*Math.pow(1.0/rn0,1.4));
-        p.a+=om*dt;
-        var inf=INFLOW*(0.30+Math.pow(1.0/rn0,1.7));
-        p.r-=inf*dt;
-      }
-      // flash + recycle at the horizon
-      if(p.r<=R*1.045){
-        var fsz=R*0.13;
-        fxc.globalAlpha=0.55;
-        fxc.drawImage(SPR[0], p.x-fsz, p.y-fsz, fsz*2, fsz*2);
-        resetP(p,false);
-        continue;
-      }
-      p.px=p.x; p.py=p.y;
-      p.x=cx+Math.cos(p.a)*p.r;
-      p.y=cy+Math.sin(p.a)*p.r*INCL;
-
-      var Rn=p.r/R;
-      var nf=0.5+0.5*((p.y-cy)/(p.r*INCL+1e-3));          // 1 front(bottom) .. 0 back(top)
-      var ang=Math.atan2(-(p.y-cy),(p.x-cx));             // y-up world angle
-      var dopp=1.0+0.80*Math.cos(ang-(Math.PI+0.05*time));// brighter left side (matches shader)
-      if(dopp<0.20) dopp=0.20; if(dopp>1.85) dopp=1.85;
-      var heat=1.0+0.50*Math.max(0.0,(1.5-Rn));
-      var ef=clamp01((2.65-Rn)/0.6)*clamp01((Rn-1.0)/0.07);
-      var al=p.base*dopp*(0.40+0.60*nf)*heat*ef*0.50;
-      if(al<=0.012) continue;
-      if(al>0.92) al=0.92;
-      var spr = Rn<1.35?SPR[0]:(Rn<1.85?SPR[1]:(Rn<2.40?SPR[2]:SPR[3]));
-      var sz = p.size*R*0.05*(0.55+0.60*nf)*(1.0+heat*0.40);
-
-      if(moving){
-        fxc.globalAlpha=al*0.5;
-        fxc.strokeStyle = Rn<1.6 ? 'rgba(210,228,255,1)' : 'rgba(110,165,255,1)';
-        fxc.lineWidth=Math.max(0.6, sz*0.28);
-        fxc.beginPath(); fxc.moveTo(p.px,p.py); fxc.lineTo(p.x,p.y); fxc.stroke();
-      }
-      fxc.globalAlpha=al;
-      fxc.drawImage(spr, p.x-sz, p.y-sz, sz*2, sz*2);
-    }
-    fxc.globalAlpha=1;
-    fxc.globalCompositeOperation='source-over';
-  }
-
-  // ====================================================================
-  //  CANVAS-2D COSMOS FALLBACK (only if WebGL fails; SVG O stays on top)
-  // ====================================================================
-  var ctx=null, stars2d=null, fbGrad=null;
+  var ctx=null, stars2d=null;
 
   // A canvas can hold only one context kind for its lifetime. If a WebGL
   // context was already created on it, getContext('2d') returns null, so we
@@ -559,27 +398,11 @@
       stars2d.push({ x:Math.random(), y:Math.random(),
         r:Math.random()*1.5+0.2, p:Math.random()*6.28, s:0.4+Math.random()*1.6 });
     }
-    // rebuild the (resolution-dependent) accretion gradient once per resize,
-    // not every frame -> no per-frame allocation / GC churn in the fallback path
-    fbGrad=null;
-    if(ctx){
-      var cx=W*0.5, cy=H*0.5, rad=ringR*H;
-      if(rad>0 && isFinite(rad)){
-        var g=ctx.createRadialGradient(cx,cy,rad*0.9, cx,cy,rad*2.6);
-        g.addColorStop(0,'rgba(150,190,255,0.55)');
-        g.addColorStop(0.18,'rgba(51,133,255,0.30)');
-        g.addColorStop(1,'rgba(20,40,90,0)');
-        fbGrad=g;
-      }
-    }
   }
   function drawFallback(time){
     if(!ctx) return;
     var cx=W*0.5, cy=H*0.5;
     var rad=ringR*H; // px ring radius (uv units * buffer height)
-    if(!(rad>0) || !isFinite(rad)) rad=Math.min(W,H)*0.18;
-    ctx.globalCompositeOperation='source-over';
-    ctx.globalAlpha=1;
     ctx.fillStyle='#000005';
     ctx.fillRect(0,0,W,H);
     // stars with subtle radial lens pull
@@ -598,20 +421,18 @@
       }
     }
     ctx.globalAlpha=1;
-    // accretion + photon ring glow (cached gradient)
+    // accretion + photon ring glow
+    var g=ctx.createRadialGradient(cx,cy,rad*0.9, cx,cy,rad*2.6);
+    g.addColorStop(0,'rgba(150,190,255,0.55)');
+    g.addColorStop(0.18,'rgba(51,133,255,0.30)');
+    g.addColorStop(1,'rgba(20,40,90,0)');
     ctx.globalCompositeOperation='lighter';
-    if(fbGrad){
-      ctx.fillStyle=fbGrad;
-      ctx.beginPath(); ctx.arc(cx,cy,rad*2.6,0,6.2832); ctx.fill();
-    }
+    ctx.fillStyle=g;
+    ctx.beginPath(); ctx.arc(cx,cy,rad*2.6,0,6.2832); ctx.fill();
     // bright photon ring
     ctx.lineWidth=Math.max(1.5,rad*0.05);
     ctx.strokeStyle='rgba(200,225,255,0.9)';
     ctx.beginPath(); ctx.arc(cx,cy,rad,0,6.2832); ctx.stroke();
-    // doppler-bright highlight arc (one side noticeably brighter)
-    ctx.lineWidth=Math.max(2,rad*0.07);
-    ctx.strokeStyle='rgba(214,232,255,0.55)';
-    ctx.beginPath(); ctx.arc(cx,cy,rad, Math.PI*0.62, Math.PI*1.38); ctx.stroke();
     ctx.globalCompositeOperation='source-over';
     // pure void
     ctx.fillStyle='#000005';
@@ -623,24 +444,22 @@
   // ====================================================================
   var mode='gl';            // 'gl' | '2d'
   var last=(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();
-  var clock=reduce?7.5:0, raf=0, started=false, dtLast=0;
+  var clock=reduce?7.5:0, raf=0, started=false;
 
   function now(){ return (typeof performance!=='undefined'&&performance.now)?performance.now():Date.now(); }
 
   function renderFrame(){
     sizeGL();
     if(mode==='gl') drawGL(clock); else drawFallback(clock);
-    drawParticles(clock, reduce?0:dtLast, !reduce);
   }
 
   function loop(ts){
     raf=requestAnimationFrame(loop);
-    if(typeof ts!=='number' || !isFinite(ts)) ts=now();  // guard non-finite timestamp
     var dt=(ts-last)/1000; last=ts;
     if(!(dt>=0)) dt=0;        // guard NaN / clock skew
     if(dt>0.1) dt=0.1;
     if(document.hidden){ return; }   // skip work while tab is hidden
-    clock+=dt; dtLast=dt;
+    clock+=dt;
     renderFrame();
   }
 
@@ -656,13 +475,12 @@
   function onResize(){
     computeSize();
     if(mode==='2d') seedStars2d();
-    if(fxc) seedParticles();
     renderFrame();
   }
 
   // ---- WebGL context loss / restore hardening ----
   function onCtxLost(e){
-    if(e && e.preventDefault) e.preventDefault();   // required so 'restored' can fire
+    e.preventDefault();          // required so 'restored' can fire
     stopLoop();
   }
   function onCtxRestored(){
@@ -685,7 +503,6 @@
   function start(){
     if(started) return; started=true;
     computeSize();
-    initFx();   // particle overlay is independent of the GL/2D background
 
     // listen for context loss before we ever draw
     canvas.addEventListener('webglcontextlost', onCtxLost, false);
@@ -712,7 +529,6 @@
       if(!document.hidden){
         last=now();
         if(!reduce && !raf){ startLoop(); }
-        else if(reduce){ renderFrame(); }   // repaint calm still frame on resume
       }
     });
 
@@ -732,7 +548,6 @@
         stopLoop();
         clock=7.5; renderFrame();
       }else{
-        last=now();
         startLoop();
       }
     };
