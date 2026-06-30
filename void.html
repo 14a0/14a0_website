@@ -14,14 +14,16 @@
     color:var(--silver);
     -webkit-font-smoothing:antialiased;
   }
-  #stage{ position:fixed; inset:0; width:100vw; height:100vh; background:#000005; }
+  /* width/height are pinned to window.innerWidth/innerHeight in px by JS so the
+     canvas never relies on iOS's 100vh (which differs from the visible height). */
+  #stage{ position:fixed; top:0; left:0; width:100vw; height:100vh; background:#000005; }
   /* the cosmos shader sits behind everything */
   #gl{ position:absolute; inset:0; width:100%; height:100%; display:block; z-index:1; }
   /* spiraling-infall particle layer, additive, above the shader */
   #fx{ position:absolute; inset:0; width:100%; height:100%; display:block; z-index:2; pointer-events:none; }
   /* crisp brand mark overlay */
   #mark{
-    position:fixed; left:50%; top:50%;
+    position:absolute; left:50%; top:50%;
     transform:translate(-50%,-50%);
     z-index:3; pointer-events:none;
     overflow:visible;
@@ -51,7 +53,7 @@
   }
   /* ===== subtle, removable brand overlay (wordmark + tagline) ===== */
   #tag{
-    position:fixed; left:0; right:0; bottom:6.2vh; z-index:3;
+    position:absolute; left:0; right:0; bottom:6.2%; z-index:3;
     text-align:center; pointer-events:none;
     font-size:clamp(9px,1.05vw,13px);
     letter-spacing:.62em; text-indent:.62em;
@@ -59,7 +61,7 @@
     animation:fadeup2 2.6s ease 0.4s both;
   }
   #wordmark{
-    position:fixed; left:50%; top:calc(50% + 26vh); transform:translateX(-50%);
+    position:absolute; left:50%; top:calc(50% + 26%); transform:translateX(-50%);
     z-index:3; pointer-events:none;
     font-size:clamp(13px,1.6vw,20px); letter-spacing:.42em; text-indent:.42em;
     font-weight:600; color:rgba(224,234,255,.9);
@@ -83,7 +85,6 @@
   <div id="stage">
     <canvas id="gl"></canvas>
     <canvas id="fx"></canvas>
-  </div>
 
   <!-- CRISP brand mark: ring + diagonal slightly beyond the circle (upper-right -> lower-left) -->
   <svg id="mark" viewBox="0 0 100 100" width="300" height="300" role="img" aria-label="14A&#216;">
@@ -106,6 +107,7 @@
   <!-- overlay: delete these two lines to remove the wordmark/tagline -->
   <div id="wordmark">14A&#216;</div>
   <div id="tag">FRONTIER&nbsp;INTELLIGENCE&nbsp;&nbsp;&middot;&nbsp;&nbsp;EMBODIED&nbsp;SYSTEMS</div>
+  </div>
 
 <script>
 "use strict";
@@ -114,6 +116,7 @@
   var canvas = document.getElementById('gl');
   var fx     = document.getElementById('fx');
   var svg    = document.getElementById('mark');
+  var stage  = document.getElementById('stage');
   var reduceMQ = (window.matchMedia)
       ? window.matchMedia('(prefers-reduced-motion: reduce)')
       : { matches:false, addEventListener:null, addListener:null };
@@ -151,6 +154,11 @@
     svg.setAttribute('height', Sm);
     // shared CSS-px geometry for the particle overlay
     vCW=cssW; vCH=cssH; cxpx=cssW*0.5; cypx=cssH*0.5; ringPx=0.18*Sm;
+    // Pin the stage (and thus both canvases + the centered mark) to the REAL
+    // visible viewport in px. On iOS Safari 100vh != window.innerHeight, so
+    // relying on 100vh stretched the shader and pushed the black hole below
+    // the crisp mark. Sizing in px keeps display == backing-store == mark center.
+    if(stage){ stage.style.width = cssW + 'px'; stage.style.height = cssH + 'px'; }
     sizeFx();
   }
 
