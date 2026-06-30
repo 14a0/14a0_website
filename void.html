@@ -40,9 +40,19 @@
   .diag{
     fill:none; stroke:#eaf1ff; stroke-width:2.0; stroke-linecap:round;
   }
-  /* smooth comet flash gliding along the jet (motion is SMIL-driven below) */
-  .spark{ pointer-events:none;
-    filter:drop-shadow(0 0 6px rgba(205,232,255,.9)) drop-shadow(0 0 18px rgba(120,180,255,.58)); }
+  /* the travelling light-jet streak running along the diagonal */
+  .streak{
+    fill:none; stroke:#dff0ff; stroke-width:2.6; stroke-linecap:round;
+    stroke-dasharray:7 300; stroke-dashoffset:300;
+    filter:url(#jetglow);
+    animation:travel 3.6s linear infinite;
+  }
+  @keyframes travel{
+    0%   { stroke-dashoffset:64; opacity:0; }
+    12%  { opacity:1; }
+    88%  { opacity:1; }
+    100% { stroke-dashoffset:-72; opacity:0; }
+  }
   /* subtle premium tagline */
   #tag{
     position:absolute; left:0; right:0; bottom:6.2%; z-index:3;
@@ -65,12 +75,11 @@
   /* graceful reduced-motion: kill all motion, keep an elegant still frame */
   body.reduced #mark{ animation:none;
     filter:drop-shadow(0 0 9px rgba(140,185,255,.7)) drop-shadow(0 0 30px rgba(51,133,255,.4)); }
-  body.reduced .spark{ display:none; }
+  body.reduced .streak{ animation:none; opacity:.9; stroke-dashoffset:-4; }
   body.reduced #tag, body.reduced #wordmark{ animation:none; opacity:1; }
   body.reduced #wordmark{ transform:translateX(-50%); }
   @media (prefers-reduced-motion: reduce){
-    #mark,#tag,#wordmark{ animation:none !important; }
-    .spark{ display:none; }
+    #mark,.streak,#tag,#wordmark{ animation:none !important; }
   }
 </style>
 </head>
@@ -85,16 +94,6 @@
         <feGaussianBlur stdDeviation="1.4" result="b"/>
         <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
       </filter>
-      <radialGradient id="flashGlow" cx="50%" cy="50%" r="50%">
-        <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.92"/>
-        <stop offset="32%"  stop-color="#dcefff" stop-opacity="0.45"/>
-        <stop offset="100%" stop-color="#bfe0ff" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="flashCore" cx="50%" cy="50%" r="50%">
-        <stop offset="0%"   stop-color="#ffffff" stop-opacity="1"/>
-        <stop offset="55%"  stop-color="#f2f8ff" stop-opacity="0.85"/>
-        <stop offset="100%" stop-color="#eaf4ff" stop-opacity="0"/>
-      </radialGradient>
     </defs>
     <!-- soft inner edge for depth -->
     <circle class="ring-inner" cx="50" cy="50" r="16.4"/>
@@ -102,14 +101,7 @@
     <circle class="ring" cx="50" cy="50" r="18"/>
     <!-- the diagonal (relativistic light jet) extends beyond the ring at both ends -->
     <line class="diag"   x1="67.3" y1="32.7" x2="32.7" y2="67.3"/>
-    <!-- smooth comet flash gliding along the jet (radial gradients, never boxy) -->
-    <g class="spark" opacity="0">
-      <ellipse rx="14" ry="4.6" fill="url(#flashGlow)"/>
-      <ellipse rx="6.5" ry="1.8" fill="url(#flashCore)"/>
-      <animateMotion dur="3.8s" repeatCount="indefinite" rotate="auto" calcMode="linear" path="M70 30 L30 70"/>
-      <animate attributeName="opacity" dur="3.8s" repeatCount="indefinite"
-               keyTimes="0;0.14;0.5;0.86;1" values="0;1;1;1;0"/>
-    </g>
+    <line class="streak" x1="67.3" y1="32.7" x2="32.7" y2="67.3"/>
   </svg>
 
   <div id="wordmark">14A&#216;</div>
