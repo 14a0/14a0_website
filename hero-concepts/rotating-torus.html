@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>14AØ — Singularity</title>
+<style>
+  :root{ color-scheme: dark; }
+  html,body{ margin:0; padding:0; height:100%; width:100%; background:#000; overflow:hidden; }
+  #stage{ position:fixed; inset:0; background:#000; }
+  #c{
+    display:block; width:100%; height:100%;
+    /* cheap, GPU-accelerated color grade for electric-blue pop */
+    filter:contrast(1.05) saturate(1.08);
+    /* cinematic reveal */
+    opacity:0; animation:cfade 1.7s cubic-bezier(.2,.7,.2,1) .1s forwards;
+  }
+  @keyframes cfade{ to{ opacity:1; } }
+
+  /* Subtle brand wordmark */
+  #wm{
+    position:fixed; left:0; right:0; bottom:6vh; margin:0; text-align:center;
+    pointer-events:none; z-index:3; user-select:none;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    opacity:0; animation:rise 2.8s cubic-bezier(.2,.7,.2,1) 1.2s forwards;
+  }
+  #wm .mark{
+    font-size:clamp(14px,1.7vw,21px); font-weight:600; letter-spacing:.62em;
+    color:#e3edff; text-indent:.62em; text-shadow:0 0 22px rgba(70,140,255,.45);
+  }
+  #wm .sub{
+    margin-top:1.15em; font-size:clamp(8.5px,.9vw,11px); font-weight:500;
+    letter-spacing:.46em; color:#7d92ba; text-indent:.46em;
+  }
+  @keyframes rise{ from{opacity:0; transform:translateY(12px);} to{opacity:.9; transform:none;} }
+
+  /* CSS-only fallback Ø (used only if canvas/2d is unavailable or rendering fails) */
+  #fallback{ display:none; position:fixed; inset:0; place-items:center; z-index:2; }
+  .csso{ position:relative; width:38vmin; height:38vmin; }
+  .csso .ring{
+    position:absolute; inset:0; border-radius:50%;
+    border:2px solid #d6e6ff;
+    box-shadow:0 0 46px 8px rgba(60,130,255,.55), inset 0 0 44px rgba(60,130,255,.4);
+  }
+  .csso .slash{
+    position:absolute; left:50%; top:50%; width:3px; height:130%;
+    transform:translate(-50%,-50%) rotate(34deg);
+    background:#eef4ff; border-radius:3px;
+    box-shadow:0 0 26px 4px rgba(130,175,255,.85);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    #wm{ animation:none; opacity:.9; transform:none; }
+    #c{ animation:none; opacity:1; }
+  }
+</style>
+</head>
+<body>
+  <div id="stage">
+    <canvas id="c" aria-hidden="true"></canvas>
+    <div id="fallback"><div class="csso"><div class="ring"></div><div class="slash"></div></div></div>
+  </div>
+  <div id="wm">
+    <div class="mark">14AØ</div>
+    <div class="sub">INTELLIGENCE&nbsp;&nbsp;IN&nbsp;&nbsp;MOTION</div>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+  var stage   = document.getElementById('stage');
+  var canvas  = document.getElementById('c');
+  var fb      = document.getElementById('fallback');
+
+  /* ---- Show the static CSS Ø fallback and stop everything ---- */
+  var failed = false;
+  function showFallback(){
+    failed = true;
+    try { if(canvas) canvas.style.display = 'none'; } catch(_){}
+    try { if(fb) fb.style.display = 'grid'; } catch(_){}
+  }
+
+  if(!canvas || !stage){ showFallback(); return; }
+
+  /* ---- Robust 2D context acquisition with graceful fallback ---- */
+  var ctx = null;
+  try { ctx = canvas.getContext('2d', { alpha:false, desynchronized:true }); } catch(e) { ctx = null; }
+  if(!ctx){ try { ctx = canvas.getContext('2d'); } catch(e2){ ctx = null; } }
+  if(!ctx){ showFallback(); return; }
+
+  /* ---- ellipse() polyfill for very old engines (prevents hard throw) ---- */
+  if(typeof ctx.ellipse !== 'function'){
+    ctx.ellipse = function(x,y,rx,ry,rot,a0,a1,acw){
+      this.save();
+      this.translate(x,y);
+      this.rotate(rot||0);
+      this.scale(rx, (ry===0?1e-6:ry));
+      this.arc(0,0,1,a0,a1,!!acw);
+      this.restore();
+    };
+  }
+
+  var reduce = false;
+  try { reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); } catch(e){ reduce = false; }
+
+  /* ---- helpers ---- */
+  function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+  function rad(d){ return d*Math.PI/180; }
+  var TWO = Math.PI*2;
+
+  /* ---- pre-baked additive glow sprites (no external images) ---- */
+  function makeGlow(r,g,b){
+    var s = 64;
+    var oc = document.createElement('canvas'); oc.width = oc.height = s;
+    var o = oc.getContext('2d');
+    if(!o) return oc;
+    var grd = o.createRadialGradient(s/2,s/2,0, s/2,s/2,s/2);
+    grd.addColorStop(0.00,'rgba('+r+','+g+','+b+',1)');
+    grd.addColorStop(0.22,'rgba('+r+','+g+','+b+',0.55)');
+    grd.addColorStop(0.55,'rgba('+r+','+g+','+b+',0.13)');
+    grd.addColorStop(1.00,'rgba('+r+','+g+','+b+',0)');
+    o.fillStyle = grd; o.fillRect(0,0,s,s);
+    return oc;
+  }
+  var SPR = {
+    hot:  makeGlow(255,255,255),
+    bw:   makeGlow(202,224,255),
+    blue: makeGlow(74,142,255),
+    deep: makeGlow(40,92,222),
+    vio:  makeGlow(150,140,255)
+  };
+  var sprList = [SPR.hot, SPR.bw, SPR.blue, SPR.deep, SPR.vio];
+
+  /* ---- viewport / geometry state ---- */
+  var W=0,H=0,dpr=1, cx=0,cy=0, S=0, Reh=0, ringR=0;
+  var TILT = rad(-22);           // disk inclination (near half toward bottom/front)
+  var INNER = 1.18, OUTER = 3.0; // disk radii in units of event-horizon radius
+
+  /* ---- particle counts tuned to viewport for steady 60fps ---- */
+  var NP = 2400;
+  (function setCount(){
+    var area = (window.innerWidth||1280) * (window.innerHeight||720);
+    if(area < 520000)       NP = 1500;
+    else if(area < 1150000) NP = 2100;
+    else                    NP = 2700;
+    if(reduce) NP = 1800;
+  })();
+
+  /* particle parameters (stable per particle) */
+  var P_theta, P_rnorm, P_h, P_size, P_a, P_spr, P_fall;
+  function initParticles(){
+    P_theta = new Float32Array(NP); P_rnorm = new Float32Array(NP);
+    P_h     = new Float32Array(NP); P_size  = new Float32Array(NP);
+    P_a     = new Float32Array(NP); P_spr   = new Int8Array(NP);
+    P_fall  = new Float32Array(NP);
+    for(var i=0;i<NP;i++){
+      var rn = INNER + (OUTER-INNER)*Math.pow(Math.random(), 0.72); // denser inside
+      P_rnorm[i] = rn;
+      P_theta[i] = Math.random()*TWO;
+      P_h[i]     = (Math.random()+Math.random()+Math.random()-1.5)/1.5; // ~gaussian thickness
+      P_size[i]  = 0.55 + Math.random()*1.7;
+      P_a[i]     = 0.45 + Math.random()*0.5;
+      P_fall[i]  = 0.5  + Math.random()*1.1;
+      var t = (rn-INNER)/(OUTER-INNER), rr = Math.random(), sp;
+      if(t < 0.22)      sp = rr<0.5 ? 0 : 1;                 // hot / blue-white
+      else if(t < 0.55) sp = rr<0.5 ? 1 : 2;                 // blue-white / blue
+      else              sp = rr<0.6 ? 2 : (rr<0.9 ? 3 : 4);  // blue / deep / violet
+      P_spr[i] = sp;
+    }
+  }
+
+  /* scratch buffers for projection + depth sort */
+  var B_sx,B_sy,B_sz,B_size,B_al,B_spr,IDX;
+  function allocBuffers(){
+    B_sx=new Float32Array(NP); B_sy=new Float32Array(NP); B_sz=new Float32Array(NP);
+    B_size=new Float32Array(NP); B_al=new Float32Array(NP); B_spr=new Int8Array(NP);
+    IDX=new Int32Array(NP); for(var i=0;i<NP;i++) IDX[i]=i;
+  }
+  function cmpDepth(a,b){ return B_sz[a]-B_sz[b]; }   // far -> near
+
+  /* parallax starfield */
+  var NS=420, ST_x,ST_y,ST_d,ST_b,ST_ph;
+  function initStars(){
+    ST_x=new Float32Array(NS); ST_y=new Float32Array(NS); ST_d=new Float32Array(NS);
+    ST_b=new Float32Array(NS); ST_ph=new Float32Array(NS);
+    for(var i=0;i<NS;i++){
+      ST_x[i]=Math.random()*2-1; ST_y[i]=Math.random()*2-1;
+      ST_d[i]=0.25+Math.random()*0.9;   // depth -> parallax + size
+      ST_b[i]=0.22+Math.random()*0.78;  // base brightness
+      ST_ph[i]=Math.random()*TWO;       // twinkle phase
+    }
+  }
+
+  function resize(){
+    dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+    W = Math.max(1, stage.clientWidth  || window.innerWidth  || 1280);
+    H = Math.max(1, stage.clientHeight || window.innerHeight || 720);
+    canvas.width  = Math.max(1, Math.round(W*dpr));
+    canvas.height = Math.max(1, Math.round(H*dpr));
+    canvas.style.width  = W+'px';
+    canvas.style.height = H+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    cx = W*0.5; cy = H*0.5; S = Math.min(W,H);
+    Reh   = S*0.135;
+    ringR = Reh*1.06;
+  }
+
+  initParticles(); allocBuffers(); initStars(); resize();
+  window.addEventListener('resize', resize, { passive:true });
+
+  /* ---------- scene pieces ---------- */
+
+  function drawNebula(){
+    ctx.globalCompositeOperation = 'lighter';
+    var g1 = ctx.createRadialGradient(cx-S*0.30, cy-S*0.26, 0, cx-S*0.30, cy-S*0.26, S*0.95);
+    g1.addColorStop(0,'rgba(30,62,140,0.10)'); g1.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle = g1; ctx.fillRect(0,0,W,H);
+    var g2 = ctx.createRadialGradient(cx+S*0.32, cy+S*0.30, 0, cx+S*0.32, cy+S*0.30, S*0.9);
+    g2.addColorStop(0,'rgba(72,42,150,0.07)'); g2.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle = g2; ctx.fillRect(0,0,W,H);
+  }
+
+  function drawStars(t, yaw){
+    ctx.globalCompositeOperation = 'lighter';
+    var spread = Math.max(W,H)*0.62;
+    var lensK  = Reh*Reh*0.9;       // gravitational deflection strength (~1/dist)
+    var hot=SPR.hot, bw=SPR.bw;
+    for(var i=0;i<NS;i++){
+      var d  = ST_d[i];
+      var nx = ST_x[i] + yaw*0.12*d;          // gentle parallax sway
+      nx = ((nx+1)%2); if(nx<0) nx+=2; nx-=1;
+      var px = cx + nx*spread;
+      var py = cy + ST_y[i]*spread;
+      // gravitational lensing: push stars radially outward near the hole (Einstein-ring crowding)
+      var dx = px-cx, dy = py-cy;
+      var dist = Math.sqrt(dx*dx+dy*dy) + 0.0001;
+      var defl = lensK/dist; if(defl > S*0.6) defl = S*0.6;
+      var sc = (dist+defl)/dist;
+      var sx = cx + dx*sc, sy = cy + dy*sc;
+      var ndist = dist*sc;
+      var mag = 1 + 1.4/(1 + Math.abs(ndist - ringR*1.25)/(Reh*0.5)); // brighten near ring
+      var tw  = 0.55 + 0.45*Math.sin(t*1.4 + ST_ph[i]);
+      var b   = ST_b[i]*tw*mag;
+      var sz  = (0.7 + 1.6*d) * (0.6 + 0.5*Math.min(2,mag));
+      ctx.globalAlpha = clamp(b*0.9, 0, 1);
+      ctx.drawImage(b>0.85?hot:bw, sx-sz, sy-sz, sz*2, sz*2);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawBlackHole(t, cosT){
+    var ry = Reh*Math.abs(cosT);
+    /* event horizon — the void (kept pure black so the empty-set glyph reads) */
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, Reh, ry, 0, 0, TWO);
+    ctx.fillStyle = '#000206';
+    ctx.fill();
+
+    ctx.globalCompositeOperation = 'lighter';
+    /* soft outer halo / bloom */
+    var hal = ctx.createRadialGradient(cx,cy, ringR*0.55, cx,cy, ringR*2.4);
+    hal.addColorStop(0.00,'rgba(40,90,200,0)');
+    hal.addColorStop(0.18,'rgba(70,140,255,0.16)');
+    hal.addColorStop(0.42,'rgba(50,110,235,0.06)');
+    hal.addColorStop(1.00,'rgba(0,0,0,0)');
+    ctx.fillStyle = hal;
+    ctx.beginPath(); ctx.arc(cx,cy, ringR*2.4, 0, TWO); ctx.fill();
+
+    /* photon ring — the Ø circle — with Doppler-style asymmetric gradient */
+    var shimmer = 0.85 + 0.15*Math.sin(t*1.7);
+    var lg = ctx.createLinearGradient(cx-ringR, cy, cx+ringR, cy);
+    lg.addColorStop(0.0,'rgba(224,237,255,'+(0.95*shimmer)+')');  // approaching side, brighter
+    lg.addColorStop(0.5,'rgba(150,196,255,'+(0.50*shimmer)+')');
+    lg.addColorStop(1.0,'rgba(120,170,255,'+(0.34*shimmer)+')');
+    ctx.lineWidth   = Math.max(1.4, Reh*0.045);
+    ctx.strokeStyle = lg;
+    ctx.shadowColor = 'rgba(80,150,255,0.9)';
+    ctx.shadowBlur  = Reh*0.5;
+    ctx.beginPath(); ctx.ellipse(cx,cy, ringR, ringR*Math.abs(cosT), 0, 0, TWO); ctx.stroke();
+
+    /* inner hot rim */
+    ctx.lineWidth   = Math.max(0.8, Reh*0.018);
+    ctx.strokeStyle = 'rgba(246,250,255,'+(0.9*shimmer)+')';
+    ctx.shadowBlur  = Reh*0.26;
+    ctx.beginPath(); ctx.ellipse(cx,cy, ringR*0.985, ringR*0.985*Math.abs(cosT), 0, 0, TWO); ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    /* orbiting hotspots riding the photon ring (life + shimmer) */
+    for(var k=0;k<2;k++){
+      var ang = t*(0.5 + k*0.22) + k*Math.PI;
+      var hx  = cx + ringR*Math.cos(ang);
+      var hy  = cy + ringR*Math.abs(cosT)*Math.sin(ang);
+      var hb  = 0.5 + 0.5*Math.cos(ang);     // brighter on the near arc
+      var hs  = Reh*(0.16 + 0.12*hb);
+      ctx.globalAlpha = 0.45 + 0.5*hb;
+      ctx.drawImage(SPR.hot, hx-hs, hy-hs, hs*2, hs*2);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawDiskAndHole(t, cosT, sinT, cosA, sinA, Dcam, Znorm){
+    var n = NP;
+    var baseAng = 0.55;          // angular speed at inner edge (rad/s)
+    var range   = OUTER - INNER;
+    var fin = INNER + range*0.06, fout = OUTER - range*0.07;
+    var infall = t*0.12;
+    var thick  = 0.055;
+
+    for(var i=0;i<n;i++){
+      /* slow inward drift, wrapped seamlessly */
+      var rr = (P_rnorm[i] - INNER - infall*P_fall[i]) % range;
+      if(rr<0) rr += range;
+      var rnorm = INNER + rr;
+      var rpx   = rnorm*Reh;
+
+      var om = baseAng * Math.pow(INNER/rnorm, 1.5);   // Keplerian: inner spins faster
+      var th = P_theta[i] + t*om;
+      var ct = Math.cos(th), st = Math.sin(th);
+
+      var lx = rpx*ct, lz = rpx*st, ly = P_h[i]*thick*rpx;
+      /* tilt about X */
+      var wy = ly*cosT - lz*sinT;
+      var wz = ly*sinT + lz*cosT;
+      var wx = lx;
+      /* camera yaw about Y */
+      var X =  wx*cosA + wz*sinA;
+      var Z = -wx*sinA + wz*cosA;
+      var Y =  wy;
+
+      var denom = Dcam - Z; if(denom < 1) denom = 1;
+      var proj  = Dcam/denom;
+      var sx = cx + X*proj;
+      var sy = cy + Y*proj;
+
+      var nz = clamp(0.5 + 0.5*(Z/Znorm), 0, 1);   // 0 far .. 1 near
+
+      /* relativistic beaming: world-Z component of orbital velocity */
+      var vZ = -(-st)*sinA + (ct*cosT)*cosA;
+      var dopp = 1 + 0.85*clamp(vZ,-1,1);
+
+      /* seamless edge fade at inner (into the hole) and outer rim */
+      var ef = 1;
+      if(rnorm < fin)       ef = (rnorm-INNER)/(range*0.06);
+      else if(rnorm > fout) ef = (OUTER-rnorm)/(range*0.07);
+      ef = clamp(ef,0,1);
+
+      var heat = 1 + 0.62*clamp((1.5-rnorm)/0.4, 0, 1);  // inner runs hot
+
+      var size = P_size[i]*Reh*0.05*proj*(0.55 + 0.9*nz);
+      var al   = clamp(P_a[i]*(0.2 + 0.82*nz)*ef*dopp*heat, 0, 1);
+
+      B_sx[i]=sx; B_sy[i]=sy; B_sz[i]=Z; B_size[i]=size; B_al[i]=al;
+      B_spr[i] = (rnorm<1.42) ? 0 : P_spr[i];   // innermost forced white-hot
+    }
+
+    /* depth sort (far -> near), drawn additively, black hole inserted at Z=0 */
+    Array.prototype.sort.call(IDX, cmpDepth);
+    ctx.globalCompositeOperation = 'lighter';
+    var drewHole = false;
+    for(var k=0;k<n;k++){
+      var id = IDX[k];
+      if(!drewHole && B_sz[id] >= 0){
+        drawBlackHole(t, cosT);
+        ctx.globalCompositeOperation = 'lighter';
+        drewHole = true;
+      }
+      var s = B_size[id];
+      if(s < 0.3) continue;
+      ctx.globalAlpha = B_al[id];
+      ctx.drawImage(sprList[B_spr[id]], B_sx[id]-s, B_sy[id]-s, s*2, s*2);
+    }
+    if(!drewHole) drawBlackHole(t, cosT);
+    ctx.globalAlpha = 1;
+  }
+
+  /* the diagonal slash of Ø rendered as a luminous light-jet (upper-right -> lower-left) */
+  var JET_PHI = rad(-58);
+  function drawJet(t){
+    ctx.globalCompositeOperation = 'lighter';
+    var ux = Math.cos(JET_PHI), uy = Math.sin(JET_PHI);
+    var L  = ringR*1.42;                 // extends slightly beyond the circle at both ends
+    var ax = cx+ux*L, ay = cy+uy*L;      // upper-right
+    var bx = cx-ux*L, by = cy-uy*L;      // lower-left
+    var pulse = 0.85 + 0.15*Math.sin(t*2.1);
+
+    ctx.lineCap = 'round';
+    var layers = [
+      [Reh*0.46,  'rgba(40,90,230,'  + (0.05*pulse) + ')'],
+      [Reh*0.26,  'rgba(60,120,255,' + (0.09*pulse) + ')'],
+      [Reh*0.13,  'rgba(120,170,255,'+ (0.16*pulse) + ')'],
+      [Reh*0.060, 'rgba(190,215,255,'+ (0.50*pulse) + ')'],
+      [Reh*0.022, 'rgba(250,252,255,'+ (0.95*pulse) + ')']
+    ];
+    for(var i=0;i<layers.length;i++){
+      ctx.strokeStyle = layers[i][1];
+      ctx.lineWidth   = layers[i][0];
+      ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
+    }
+
+    /* end flares */
+    var fs = Reh*0.5;
+    ctx.globalAlpha = 0.5*pulse;
+    ctx.drawImage(SPR.bw, ax-fs, ay-fs, fs*2, fs*2);
+    ctx.drawImage(SPR.bw, bx-fs, by-fs, fs*2, fs*2);
+    ctx.globalAlpha = 1;
+
+    /* relativistic blobs streaming along the jet */
+    var nb = 4, period = 5.0;
+    for(var b=0;b<nb;b++){
+      var ph = ((t/period) + b/nb) % 1;
+      var s  = (ph*2-1)*L;
+      var jx = cx+ux*s, jy = cy+uy*s;
+      var fade = Math.sin(ph*Math.PI);
+      var sz = Reh*(0.07 + 0.05*fade);
+      ctx.globalAlpha = 0.6*fade*pulse;
+      ctx.drawImage(SPR.hot, jx-sz, jy-sz, sz*2, sz*2);
+    }
+    ctx.globalAlpha = 1;
+
+    /* singularity glint where the slash crosses the core */
+    var gs = Reh*0.2*pulse;
+    ctx.globalAlpha = 0.7;
+    ctx.drawImage(SPR.hot, cx-gs, cy-gs, gs*2, gs*2);
+    ctx.globalAlpha = 1;
+  }
+
+  function drawVignette(){
+    ctx.globalCompositeOperation = 'source-over';
+    var vg = ctx.createRadialGradient(cx,cy, S*0.2, cx,cy, Math.max(W,H)*0.78);
+    vg.addColorStop(0.0,'rgba(0,0,0,0)');
+    vg.addColorStop(0.7,'rgba(0,1,6,0.34)');
+    vg.addColorStop(1.0,'rgba(0,1,6,0.92)');
+    ctx.fillStyle = vg; ctx.fillRect(0,0,W,H);
+  }
+
+  /* ---------- frame ---------- */
+  function render(t){
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#000206';
+    ctx.fillRect(0,0,W,H);
+
+    drawNebula();
+
+    var T   = TILT + rad(2.5)*Math.sin(t*0.06);            // breathing inclination
+    var yaw = rad(8)*Math.sin(t*0.035) + rad(-3);          // gentle camera drift
+    var cosT=Math.cos(T), sinT=Math.sin(T), cosA=Math.cos(yaw), sinA=Math.sin(yaw);
+    var Dcam = S*1.7;
+    var Znorm = OUTER*Reh*Math.max(0.25, Math.abs(sinT)) + 0.06*OUTER*Reh;
+
+    drawStars(t, yaw);
+    drawDiskAndHole(t, cosT, sinT, cosA, sinA, Dcam, Znorm);
+    drawJet(t);
+    drawVignette();
+
+    /* reset state so nothing leaks between frames */
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+  }
+
+  /* ---------- loop / lifecycle ---------- */
+  var raf=0, last=0, t0=0, running=true;
+
+  function safeRender(t){
+    if(failed) return false;
+    try { render(t); return true; }
+    catch(err){
+      try { if(window.console && console.error) console.error('Singularity render failed; using static fallback.', err); } catch(_){}
+      if(raf){ try{ cancelAnimationFrame(raf); }catch(_){ } raf = 0; }
+      running = false;
+      showFallback();
+      return false;
+    }
+  }
+
+  function loop(now){
+    if(!running || failed) return;
+    if(!last) last = now;
+    var dt = (now-last)/1000; if(dt>0.05) dt=0.05; if(dt<0) dt=0; last = now;
+    t0 += dt;
+    if(!safeRender(t0)) return;
+    raf = requestAnimationFrame(loop);
+  }
+
+  if(reduce){
+    /* single calm, elegant, near-static frame */
+    safeRender(7.3);
+    window.addEventListener('resize', function(){ if(!failed){ safeRender(7.3); } }, { passive:true });
+  }else{
+    raf = requestAnimationFrame(loop);
+    document.addEventListener('visibilitychange', function(){
+      if(failed) return;
+      if(document.hidden){
+        running = false;
+        if(raf){ try{ cancelAnimationFrame(raf); }catch(_){ } raf = 0; }
+      }else if(!running){
+        running = true; last = 0;
+        raf = requestAnimationFrame(loop);
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>
