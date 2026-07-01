@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="14A0 Pty Ltd - AI-powered software and robotics research & development">
+    <meta name="description" content="14A0 Pty Ltd is an Australian software company building consumer AI products, including KCALM — a personal AI nutrition coach that turns everyday food into individual health guidance. Founded 2025 in Sydney by Hao Lan.">
     <title>14A0 Pty Ltd</title>
 
     <!-- Social share -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="14AØ Pty Ltd">
-    <meta property="og:description" content="AI-powered software and robotics research & development.">
+    <meta property="og:description" content="An Australian software company building consumer AI products, including KCALM, a personal AI nutrition coach.">
     <meta property="og:url" content="https://14a0.com/">
     <meta property="og:image" content="https://14a0.com/photo/og-image.jpg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="14AØ Pty Ltd">
-    <meta name="twitter:description" content="AI-powered software and robotics research & development.">
+    <meta name="twitter:description" content="An Australian software company building consumer AI products, including KCALM, a personal AI nutrition coach.">
     <meta name="twitter:image" content="https://14a0.com/photo/og-image.jpg">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="icon" type="image/png" sizes="256x256" href="favicon.png">
@@ -673,6 +673,28 @@
             51%, 100% { opacity: 0; }
         }
         
+        /* About intro lead — first concrete line the reader (and reviewers) see */
+        .intro-lead {
+            font-size: 15px;
+            line-height: 1.7;
+            color: var(--text);
+            max-width: 760px;
+            opacity: 0;
+            animation: fadeIn 0.8s ease-out forwards;
+            animation-delay: 0.2s;
+        }
+
+        /* Business-model / platform meta line on product cards */
+        .product-meta {
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
         @media (max-width: 1024px) {
             .bp-figure,
             .bp-spot,
@@ -746,6 +768,9 @@
         </header>
         
         <div class="content">
+            <!-- About / concrete one-liner -->
+            <p class="intro-lead">14A0 Pty Ltd is an Australian software company building consumer AI that makes expert guidance feel personal. Our first product, <a href="https://kcalm.app" target="_blank" rel="noopener">KCALM</a>, learns how you eat and what you're working toward, then turns everyday food into clear, personal direction — so knowing what's right for you finally feels effortless.</p>
+
             <!-- Products Section -->
             <div class="products-section">
                 <h2>Products</h2>
@@ -755,11 +780,12 @@
                             <span class="product-name">KCALM.APP</span>
                             <span class="status-live">Live</span>
                         </div>
-                        <div class="product-type">AI Nutrition Tracker</div>
-                        <p class="product-description">Multi-model food logging with intelligent macro tracking. Photo to nutrients in seconds. Your personal nutrition intelligence.</p>
+                        <div class="product-type">AI Nutrition Coach</div>
+                        <p class="product-description">KCALM understands your goals, your body, and the way you actually eat. Log a meal with a photo or a quick message, and it shows you what's working, what to adjust, and why — guidance shaped around you, so the right choice becomes the easy one.</p>
+                        <p class="product-meta">Consumer subscription · iOS · Web · Telegram · WhatsApp</p>
                         <div class="featured-actions">
-                            <a href="https://kcalm.app" class="button" target="_blank">Get Started</a>
-                            <a href="https://kcalm.app" class="featured-url" target="_blank">kcalm.app ↗</a>
+                            <a href="https://kcalm.app" class="button" target="_blank" rel="noopener">Get Started</a>
+                            <a href="https://kcalm.app" class="featured-url" target="_blank" rel="noopener">kcalm.app ↗</a>
                         </div>
                     </div>
                 </div>
@@ -773,6 +799,23 @@
                     </div>
                     <span class="upcoming-tag">Private Beta</span>
                 </a>
+            </div>
+
+            <!-- Team Section -->
+            <div class="products-section">
+                <h2>Team</h2>
+                <div class="products-grid">
+                    <div class="product-card">
+                        <div class="product-card-header">
+                            <span class="product-name">Hao Lan</span>
+                        </div>
+                        <div class="product-type">Founder &amp; Director</div>
+                        <p class="product-description">Engineer and founder of 14A0. Builds the company's products end-to-end — AI systems, iOS and web apps, and growth. Founded 14A0 in 2025 to develop consumer AI software, starting with KCALM.</p>
+                        <div class="featured-actions">
+                            <a href="https://www.linkedin.com/in/haoengineer/" class="button" target="_blank" rel="noopener">LinkedIn ↗</a>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Info Grid -->
